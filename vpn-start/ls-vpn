@@ -1,0 +1,114 @@
+#!/bin/bash
+#Author: Niklas Lorenz
+#License: MIT License, Copyright (c) 2021 Niklas Lorenz
+#Website: https://niklasl.com
+#Documentation: https://dev.niklasl.com/docs.php
+#Email: info@niklasl.com
+#Description: Little script wich allows you to start and turn off your WireGuard VPN service basically.
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+
+##########EDIT AREA##########
+INSTANCE_NAME="wg0"
+#############################
+
+LINE="------------------------------"
+
+function isRoot () {
+	if [ "${EUID}" -ne 0 ]; then
+		echo "You need to run this script as root or sudo!"
+		exit 1
+	fi
+}
+
+function installScript() {
+	if ! [[ -e /usr/bin/ls-vpn ]]; then
+		echo "<niklasl.com> Installing script..."
+		cp "$0" /usr/bin/
+		echo "<niklasl.com> Script was installed!"
+		echo "<niklasl.com> To use this script please run it again!"
+		exit 0
+	else
+		cp "$0" /usr/bin/
+		echo "<niklasl.com> The script is already installed!"
+	fi
+}
+
+function vpnStatus() {
+if systemctl | grep -qoh "wg0"; then
+	echo "<niklasl.com> VPN on!"
+	true
+else
+	echo "<niklasl.com> VPN off!"
+	false
+fi
+}
+
+isRoot
+
+case "$1" in
+on)
+	if vpnStatus; then
+		echo "<niklasl.com> WireGuard VPN is already running!"
+		exit 1
+	else
+		echo "<niklasl.com> Starting WireGuard VPN service..."
+		echo ""
+		wg-quick up "$INSTANCE_NAME"
+		echo ""
+		echo "<niklasl.com> WireGuard VPN service started!"
+	fi
+	exit 0
+;;
+off)
+	if vpnStatus; then
+		echo "<niklasl.com> Shutting down WireGuard VPN service..."
+		echo ""
+		wg-quick down "$INSTANCE_NAME"
+		echo ""
+		echo "<niklasl.com> WireGuard VPN service off!"
+		exit 1
+	else
+		echo "<niklasl.com> WireGuard VPN is is not running!"
+		exit 1
+	fi
+	exit 0
+;;
+toggle)
+	if vpnStatus; then
+		echo "<niklasl.com> WireGuard VPN is already running!"
+		echo "<niklasl.com> Shutting down WireGuard VPN service..."
+		echo ""
+		wg-quick down "$INSTANCE_NAME"
+		echo ""
+		echo "<niklasl.com> WireGuard VPN service off!"
+		exit 0
+	else
+		echo "<niklasl.com> WireGuard VPN is is not running!"
+		echo "<niklasl.com> Starting WireGuard VPN service..."
+		echo ""
+		wg-quick up "$INSTANCE_NAME"
+		echo ""
+		echo "<niklasl.com> WireGuard VPN service started!"
+		exit 0
+	fi
+;;
+install)
+	installScript
+;;
+status)
+	if vpnStatus; then
+		echo "<niklasl.com> WireGuard VPN service is running!"
+	else
+		echo "<niklasl.com> WireGuard VPN service is not running!"
+	fi
+;;
+--help)
+	echo -e "$LINE\n<niklasl.com> Commands:\n$0 { on ; off ; toggle ; status ; install }\n\nVersion: 1.0\n$LINE"
+	exit 0
+;;
+*)
+	"${0}" --help
+;;
+esac
+exit 0
